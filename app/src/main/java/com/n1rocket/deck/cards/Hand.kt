@@ -1,13 +1,21 @@
 package com.n1rocket.deck.cards
 
 open class Hand {
-    var cards:MutableList<Card> = mutableListOf()
+    var cards: MutableList<Card> = mutableListOf()
 
-    fun addCard(card: Card){
+    fun addCard(card: Card) {
         this.cards.add(card)
     }
 
-    fun addCards(cards: List<Card>){
+    fun addCards(cards: List<Card>) {
         this.cards.addAll(cards)
+    }
+
+    fun cleanHand() {
+        this.cards = mutableListOf()
+    }
+
+    fun hasCards(): Boolean {
+        return this.cards.isNotEmpty()
     }
 }

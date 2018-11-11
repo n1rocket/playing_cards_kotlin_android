@@ -1,6 +1,6 @@
 package com.n1rocket.deck.cards
 
-class Player(var name: String, var money: Double, val isBank: Boolean = false){
+open class Player(var name: String, var money: Double){
 
     private fun addMoney(money: Double){
         this.money += money

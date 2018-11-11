@@ -1,6 +1,6 @@
 package com.n1rocket.deck.cards
 
-enum class Card private constructor(var value: CardValue, var suit: CardSuit, var hidden: Boolean = false) {
+enum class Card private constructor(var value: CardValue, var suit: CardSuit) {
 
     ACE_S(CardValue.ACE, CardSuit.SPADES),
 
@@ -150,7 +150,7 @@ enum class Card private constructor(var value: CardValue, var suit: CardSuit, va
 
         return s
     }
-    
+
     enum class CardValue {
         ACE, KING, QUEEN, JACK, TEN, NINE, EIGHT, SEVEN, SIX, FIVE, FOUR, THREE, TWO
     }

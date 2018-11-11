@@ -3,26 +3,41 @@ package com.n1rocket.deck.cards.blackjack
 import com.n1rocket.deck.cards.Card
 import com.n1rocket.deck.cards.Hand
 
-class HandBlackJack : Hand() {
+class HandBlackJack(var isHiddenCard : Boolean = false) : Hand() {
 
-    fun getTotalMaxValue(): Int {
-        var totalValue:Int = 0
-        var areThereACE:Boolean = false
+    private fun getTotalMaxValue(withHiddenCards :Boolean = true ): Int {
+        var totalValue: Int = 0
+        var areThereACE: Boolean = false
 
         cards.forEach {
-            areThereACE = it.value == Card.CardValue.ACE
-            totalValue += getValue(it.value)
+            if (withHiddenCards){
+                areThereACE = it.value == Card.CardValue.ACE
+                totalValue += getValue(it.value)
+            }else{
+                if (cards[0] == it) {
+                    areThereACE = it.value == Card.CardValue.ACE
+                    totalValue += getValue(it.value)
+                }else if (!isHiddenCard){
+                    areThereACE = it.value == Card.CardValue.ACE
+                    totalValue += getValue(it.value)
+                }
+            }
+
         }
 
-        if (totalValue > WIN_HAND_VALUE && areThereACE){
+        if (totalValue > WIN_HAND_VALUE && areThereACE) {
             totalValue -= DIFFERENCE_ACE_VALUE
         }
 
         return totalValue
     }
 
-    private fun getValue(value: Card.CardValue) : Int{
-        return when(value){
+    fun showCardHidden(){
+        isHiddenCard = false
+    }
+
+    private fun getValue(value: Card.CardValue): Int {
+        return when (value) {
             Card.CardValue.ACE -> 11
             Card.CardValue.KING -> 10
             Card.CardValue.QUEEN -> 10
@@ -40,8 +55,34 @@ class HandBlackJack : Hand() {
     }
 
     fun hasDirectWinner(): Boolean {
-        val totalValue = getTotalMaxValue()
-        return totalValue == WIN_HAND_VALUE
+        return getTotalMaxValue() == WIN_HAND_VALUE
+    }
+
+    fun canSplit(): Boolean {
+        var canSplit = false
+        if (cards.size == 2) {
+            canSplit = cards[0].value == cards[1].value
+        }
+        return canSplit
+    }
+
+    override fun toString(): String {
+        var string = "Hand: ["
+
+        cards.forEach {
+
+            string += if (cards[0] == it || !isHiddenCard) {
+                "<$it>"
+            }else{
+                "<HIDDEN>"
+            }
+        }
+        string += "] Value: ${this.getTotalMaxValue(false)}"
+        return string
+    }
+
+    fun isBust() : Boolean {
+        return getTotalMaxValue() > WIN_HAND_VALUE
     }
 
     companion object {
