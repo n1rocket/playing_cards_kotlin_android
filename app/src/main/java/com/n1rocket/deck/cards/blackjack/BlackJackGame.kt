@@ -22,6 +22,8 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
         fun onBankerUpdated(banker: BankerBlackJack)
         fun onPlayerUpdated(player: PlayerBlackJack, handBlackJack: HandBlackJack)
         fun onPlayerBust(player: PlayerBlackJack)
+        fun onBankerBust()
+        fun onPlayerDraw(player: PlayerBlackJack, prize: Double)
     }
 
     sealed class PlayerAction {
@@ -33,12 +35,15 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
 
     fun startRound(bids: HashMap<PlayerBlackJack, Double>) {
         this.deck = Deck()
+        this.hands = HashMap()
+        this.players = ArrayList()
         Log.d("BJ", "startRound")
         this.bids = bids
+        resetStandPlayers()
         this.banker = BankerBlackJack("Rodrigo Rato")
         this.players = bids.keys.toList()
         dealBids()
-        deck.shuffleDeck()
+        this.deck.shuffleDeck()
         dealCards()
         checkDirectWinners()
 
@@ -47,15 +52,29 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
         }
     }
 
+    private fun resetStandPlayers() {
+        this.bids.forEach {
+            it.key.doStand(false)
+        }
+    }
+
 
     fun doPlayerAction(player: PlayerBlackJack, action: PlayerAction) {
         Log.d("BJ", "doPlayerAction")
 
         when (action) {
-            is PlayerAction.Hit -> { hit(player) }
-            is PlayerAction.X2Bet -> { x2Bet(player) }
-            is PlayerAction.Stand -> { stand(player) }
-            is PlayerAction.Split -> { split(player) }
+            is PlayerAction.Hit -> {
+                hit(player)
+            }
+            is PlayerAction.X2Bet -> {
+                x2Bet(player)
+            }
+            is PlayerAction.Stand -> {
+                stand(player)
+            }
+            is PlayerAction.Split -> {
+                split(player)
+            }
         }
     }
 
@@ -85,8 +104,9 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
     }
 
     private fun checkBust(player: PlayerBlackJack, hand: HandBlackJack) {
-        if (hand.isBust()){
+        if (hand.isBust()) {
             delegate.onPlayerBust(player)
+            playerLose(player, hand)
         }
     }
 
@@ -95,14 +115,100 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
 
         getNextPlayerAndHand()?.let {
             delegate.onTurn(it.key, it.value, getPlayerActions(it))
-        }?: this.goBanker()
+        } ?: this.goBanker()
     }
 
     private fun goBanker() {
+        Log.d("BJ", "goBanker")
+
         banker.hand.showCardHidden()
         delegate.onBankerUpdated(banker)
 
         //TODO If banker hand >= 17 stand banker and check winners
+        while (!banker.hand.arriveToBankerLimit() && !banker.hand.isBust()) {
+            Log.d("BJ", "!arriveToBankerLimit && !isBust")
+
+            banker.hand.addCard(takeCard())
+            delegate.onBankerUpdated(banker)
+        }
+
+        if (banker.hand.isBust()) {
+            cleanBanker()
+            delegate.onBankerBust()
+            playerAliveWinners()
+        } else {
+            checkBankerHandVsPlayersAliveHand()
+        }
+
+    }
+
+    private fun checkBankerHandVsPlayersAliveHand() {
+        hands.filter { it.key.stand }.forEach {
+            when (banker.hand.compareTo(it.value)) {
+                -1 -> playerWinner(it.key, it.value, BlackJackPrizes.Simple())
+                0 -> playerDraw(it.key, it.value, BlackJackPrizes.Draw())
+                1 -> bankerWinner(it.key, it.value)
+            }
+        }
+    }
+
+    private fun playerDraw(
+        player: PlayerBlackJack,
+        hand: HandBlackJack,
+        prize: BlackJackPrizes
+    ) {
+        bids[player]?.let { bid ->
+            player.winner(bid)
+            deck.removeCards(hand.cards)
+            hand.cleanHand()
+            delegate.onPlayerDraw(player, prize.getPrize(bid))
+        }
+    }
+
+    private fun playerWinner(
+        player: PlayerBlackJack,
+        hand: HandBlackJack,
+        prize: BlackJackPrizes
+    ) {
+        bids[player]?.let { bid ->
+            player.winner(bid)
+            deck.removeCards(hand.cards)
+            hand.cleanHand()
+            delegate.onPlayerWinner(player, prize.getPrize(bid))
+        }
+    }
+
+
+    private fun playerLose(
+        player: PlayerBlackJack,
+        hand: HandBlackJack
+    ) {
+        bids[player]?.let { bid ->
+            player.lose(bid)
+            deck.removeCards(hand.cards)
+            hand.cleanHand()
+        }
+    }
+
+    private fun bankerWinner(
+        player: PlayerBlackJack,
+        hand: HandBlackJack
+    ) {
+        playerLose(player, hand)
+    }
+
+    private fun cleanBanker() {
+        banker.hand.let {
+            deck.removeCards(it.cards)
+            it.cleanHand()
+        }
+    }
+
+    private fun playerAliveWinners() {
+        hands.filter { it.key.stand }.forEach {
+            delegate.onPlayerUpdated(it.key, it.value)
+            playerWinner(it.key, it.value, BlackJackPrizes.Simple())
+        }
     }
 
     private fun getPlayerActions(playerAndHand: Map.Entry<PlayerBlackJack, HandBlackJack>): List<PlayerAction> {
@@ -152,7 +258,6 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
 
     private fun dealCards() {
         Log.d("BJ", "dealCards")
-        hands = HashMap()
         players.forEach { hands[it] = HandBlackJack() }
 
         hands.forEach {
@@ -176,12 +281,7 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
         hands.forEach {
             if (it.value.hasDirectWinner()) {
                 delegate.onPlayerUpdated(it.key, it.value)
-                bids[it.key]?.let { bid ->
-                    it.key.winner(bid)
-                    it.value.cleanHand()
-                    deck.removeCards(it.value.cards)
-                    delegate.onPlayerWinner(it.key, BlackJackPrizes(bid).blackJack())
-                }
+                playerWinner(it.key, it.value, BlackJackPrizes.BlackJack())
             }
         }
 

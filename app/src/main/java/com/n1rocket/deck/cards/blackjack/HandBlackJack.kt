@@ -85,6 +85,14 @@ class HandBlackJack(var isHiddenCard : Boolean = false) : Hand() {
         return getTotalMaxValue() > WIN_HAND_VALUE
     }
 
+    fun arriveToBankerLimit(): Boolean {
+        return getTotalMaxValue() in 17..21
+    }
+
+    fun compareTo(vsHand: HandBlackJack): Int {
+        return this.getTotalMaxValue().compareTo(vsHand.getTotalMaxValue())
+    }
+
     companion object {
         const val WIN_HAND_VALUE: Int = 21
         const val DIFFERENCE_ACE_VALUE: Int = 10

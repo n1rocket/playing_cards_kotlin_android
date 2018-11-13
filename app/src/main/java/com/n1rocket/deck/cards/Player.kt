@@ -14,6 +14,10 @@ open class Player(var name: String, var money: Double){
         removeMoney(money)
     }
 
+    fun lose(money: Double){
+        removeMoney(money)
+    }
+
     fun winner(money: Double){
         addMoney(money)
     }

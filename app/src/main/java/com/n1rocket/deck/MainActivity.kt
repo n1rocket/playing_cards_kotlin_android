@@ -33,6 +33,15 @@ class MainActivity : AppCompatActivity() {
 
     fun startBlackJack(){
         blackJackGame = BlackJackGame(object : BlackJackGame.BlackJackGameDelegate {
+            override fun onPlayerDraw(player: PlayerBlackJack, prize: Double) {
+                Log.d("BlackJack", "onPlayerDraw: ${player.name}, $prize€")
+                Snackbar.make(findViewById(android.R.id.content), "${player.name} Draw!", Snackbar.LENGTH_SHORT).show()
+            }
+
+            override fun onBankerBust() {
+                Log.d("BlackJack", "onBankerBust")
+            }
+
             override fun onPlayerUpdated(player: PlayerBlackJack, handBlackJack: HandBlackJack) {
                 Log.d("BlackJack", "onPlayerUpdated: ${player.name}, $handBlackJack")
 
