@@ -24,6 +24,8 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
         fun onPlayerBust(player: PlayerBlackJack)
         fun onBankerBust()
         fun onPlayerDraw(player: PlayerBlackJack, prize: Double)
+        fun onPlayerLose(player: PlayerBlackJack, bid: Double)
+        fun onBankerWinner()
     }
 
     sealed class PlayerAction {
@@ -78,6 +80,15 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
         }
     }
 
+    private fun hit(player: PlayerBlackJack) {
+        Log.d("BJ", "hit")
+        hands[player]?.let {
+            it.addCard(takeCard())
+            delegate.onPlayerUpdated(player, it)
+            checkIsBust(player, it)
+        }
+    }
+
     private fun stand(player: PlayerBlackJack) {
         Log.d("BJ", "stand")
         player.doStand()
@@ -86,7 +97,20 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
 
     private fun x2Bet(player: PlayerBlackJack) {
         Log.d("BJ", "x2Bet")
+        bids[player]?.run {
+            this * 2
+        }
+        addCardToPlayer(player)
+    }
 
+    private fun addCardToPlayer(player: PlayerBlackJack) {
+        hands[player]?.let {
+            it.addCard(takeCard())
+            delegate.onPlayerUpdated(player, it)
+            if (!checkIsBust(player, it)){
+                stand(player)
+            }
+        }
     }
 
     private fun split(player: PlayerBlackJack) {
@@ -94,20 +118,12 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
 
     }
 
-    private fun hit(player: PlayerBlackJack) {
-        Log.d("BJ", "hit")
-        hands[player]?.let {
-            it.addCard(takeCard())
-            delegate.onPlayerUpdated(player, it)
-            checkBust(player, it)
-        }
-    }
-
-    private fun checkBust(player: PlayerBlackJack, hand: HandBlackJack) {
+    private fun checkIsBust(player: PlayerBlackJack, hand: HandBlackJack): Boolean {
         if (hand.isBust()) {
             delegate.onPlayerBust(player)
             playerLose(player, hand)
         }
+        return hand.isBust()
     }
 
     private fun nextPlayer() {
@@ -121,35 +137,45 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
     private fun goBanker() {
         Log.d("BJ", "goBanker")
 
-        banker.hand.showCardHidden()
-        delegate.onBankerUpdated(banker)
+        if (hasPlayerAlive()) {
 
-        //TODO If banker hand >= 17 stand banker and check winners
-        while (!banker.hand.arriveToBankerLimit() && !banker.hand.isBust()) {
-            Log.d("BJ", "!arriveToBankerLimit && !isBust")
-
-            banker.hand.addCard(takeCard())
+            banker.hand.showCardHidden()
             delegate.onBankerUpdated(banker)
-        }
 
-        if (banker.hand.isBust()) {
-            cleanBanker()
-            delegate.onBankerBust()
-            playerAliveWinners()
-        } else {
-            checkBankerHandVsPlayersAliveHand()
+            //TODO If banker hand >= 17 stand banker and check winners
+            while (!banker.hand.arriveToBankerLimit() && !banker.hand.isBust()) {
+                Log.d("BJ", "!arriveToBankerLimit && !isBust")
+
+                banker.hand.addCard(takeCard())
+                delegate.onBankerUpdated(banker)
+            }
+
+            if (banker.hand.isBust()) {
+                cleanBanker()
+                delegate.onBankerBust()
+                playerAliveWinners()
+            } else {
+                checkBankerHandVsPlayersAliveHand()
+            }
+        }else{
+            bankerWinner()
         }
 
     }
 
+
     private fun checkBankerHandVsPlayersAliveHand() {
         hands.filter { it.key.stand }.forEach {
+
+            Log.d("BJ", "Comparation: ${banker.hand.compareTo(it.value)}")
+
             when (banker.hand.compareTo(it.value)) {
                 -1 -> playerWinner(it.key, it.value, BlackJackPrizes.Simple())
                 0 -> playerDraw(it.key, it.value, BlackJackPrizes.Draw())
-                1 -> bankerWinner(it.key, it.value)
+                1 -> bankerWinnerToPlayer(it.key, it.value)
             }
         }
+        cleanBanker()
     }
 
     private fun playerDraw(
@@ -187,10 +213,16 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
             player.lose(bid)
             deck.removeCards(hand.cards)
             hand.cleanHand()
+        delegate.onPlayerLose(player, bid)
         }
     }
 
-    private fun bankerWinner(
+    private fun bankerWinner() {
+        cleanBanker()
+        delegate.onBankerWinner()
+    }
+
+    private fun bankerWinnerToPlayer(
         player: PlayerBlackJack,
         hand: HandBlackJack
     ) {

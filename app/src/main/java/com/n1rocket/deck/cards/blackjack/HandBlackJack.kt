@@ -3,22 +3,22 @@ package com.n1rocket.deck.cards.blackjack
 import com.n1rocket.deck.cards.Card
 import com.n1rocket.deck.cards.Hand
 
-class HandBlackJack(var isHiddenCard : Boolean = false) : Hand() {
+class HandBlackJack(var isHiddenCard: Boolean = false) : Hand() {
 
-    private fun getTotalMaxValue(withHiddenCards :Boolean = true ): Int {
+    fun getTotalMaxValue(withHiddenCards: Boolean = true): Int {
         var totalValue: Int = 0
         var areThereACE: Boolean = false
 
         cards.forEach {
-            if (withHiddenCards){
-                areThereACE = it.value == Card.CardValue.ACE
+            if (withHiddenCards) {
+                areThereACE = checkAces(it.value, areThereACE)
                 totalValue += getValue(it.value)
-            }else{
+            } else {
                 if (cards[0] == it) {
-                    areThereACE = it.value == Card.CardValue.ACE
+                    areThereACE = checkAces(it.value, areThereACE)
                     totalValue += getValue(it.value)
-                }else if (!isHiddenCard){
-                    areThereACE = it.value == Card.CardValue.ACE
+                } else if (!isHiddenCard) {
+                    areThereACE = checkAces(it.value, areThereACE)
                     totalValue += getValue(it.value)
                 }
             }
@@ -32,7 +32,15 @@ class HandBlackJack(var isHiddenCard : Boolean = false) : Hand() {
         return totalValue
     }
 
-    fun showCardHidden(){
+    private fun checkAces(value: Card.CardValue, areThereACE: Boolean): Boolean {
+        if (!areThereACE) {
+            return value == Card.CardValue.ACE
+        }
+
+        return areThereACE
+    }
+
+    fun showCardHidden() {
         isHiddenCard = false
     }
 
@@ -73,7 +81,7 @@ class HandBlackJack(var isHiddenCard : Boolean = false) : Hand() {
 
             string += if (cards[0] == it || !isHiddenCard) {
                 "<$it>"
-            }else{
+            } else {
                 "<HIDDEN>"
             }
         }
@@ -81,7 +89,7 @@ class HandBlackJack(var isHiddenCard : Boolean = false) : Hand() {
         return string
     }
 
-    fun isBust() : Boolean {
+    fun isBust(): Boolean {
         return getTotalMaxValue() > WIN_HAND_VALUE
     }
 

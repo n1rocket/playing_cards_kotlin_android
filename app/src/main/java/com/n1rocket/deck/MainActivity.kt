@@ -33,12 +33,24 @@ class MainActivity : AppCompatActivity() {
 
     fun startBlackJack(){
         blackJackGame = BlackJackGame(object : BlackJackGame.BlackJackGameDelegate {
+            override fun onBankerWinner() {
+                hideActions()
+                showMessage("Banker Winner!")
+            }
+
+            override fun onPlayerLose(player: PlayerBlackJack, bid: Double) {
+                hideActions()
+                showMessage("${player.name} Lose!")
+            }
+
             override fun onPlayerDraw(player: PlayerBlackJack, prize: Double) {
                 Log.d("BlackJack", "onPlayerDraw: ${player.name}, $prize€")
-                Snackbar.make(findViewById(android.R.id.content), "${player.name} Draw!", Snackbar.LENGTH_SHORT).show()
+                hideActions()
+                showMessage("${player.name} Draw!")
             }
 
             override fun onBankerBust() {
+                hideActions()
                 Log.d("BlackJack", "onBankerBust")
             }
 
@@ -51,7 +63,7 @@ class MainActivity : AppCompatActivity() {
             override fun onPlayerBust(player: PlayerBlackJack) {
                 Log.d("BlackJack", "onPlayerBust: ${player.name}")
                 hideActions()
-                Snackbar.make(findViewById(android.R.id.content), "${player.name} Bust!", Snackbar.LENGTH_SHORT).show()
+                showMessage("${player.name} Bust!")
             }
 
             override fun onBankerUpdated(banker: BankerBlackJack) {
@@ -73,7 +85,8 @@ class MainActivity : AppCompatActivity() {
 
             override fun onPlayerWinner(player: PlayerBlackJack, prize: Double) {
                 Log.d("BlackJack", "onPlayerWinner: ${player.name}, $prize€")
-                Snackbar.make(findViewById(android.R.id.content), "${player.name} Win!", Snackbar.LENGTH_SHORT).show()
+                hideActions()
+                showMessage("${player.name} Win!")
             }
         })
 
@@ -82,6 +95,10 @@ class MainActivity : AppCompatActivity() {
         )
 
         blackJackGame.startRound(bids)
+    }
+
+    private fun showMessage(message: String) {
+        Snackbar.make(findViewById(android.R.id.content), message, Snackbar.LENGTH_LONG).show()
     }
 
     private fun showBanker(banker: BankerBlackJack) {
