@@ -1,4 +1,4 @@
-package com.n1rocket.deck.cards
+package com.n1rocket.deck
 
 open class Hand {
     var cards: MutableList<Card> = mutableListOf()

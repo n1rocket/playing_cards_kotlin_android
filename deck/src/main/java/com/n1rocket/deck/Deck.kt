@@ -1,4 +1,4 @@
-package com.n1rocket.deck.cards
+package com.n1rocket.deck
 
 import java.util.*
 

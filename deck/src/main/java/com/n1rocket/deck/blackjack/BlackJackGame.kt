@@ -1,15 +1,15 @@
-package com.n1rocket.deck.cards.blackjack
+package com.n1rocket.deck.blackjack
 
-import android.util.Log
-import com.n1rocket.deck.cards.Card
-import com.n1rocket.deck.cards.Deck
+import com.n1rocket.deck.Card
+import com.n1rocket.deck.Deck
+import com.n1rocket.deck.LoggerInterface
 
-class BlackJackGame(private val delegate: BlackJackGameDelegate) {
+class BlackJackGame(private val delegate: BlackJackGameDelegate, private val logger: LoggerInterface) {
     lateinit var deck: Deck
-    lateinit var players: List<PlayerBlackJack>
-    lateinit var banker: BankerBlackJack
-    lateinit var hands: HashMap<PlayerBlackJack, HandBlackJack>
-    lateinit var bids: HashMap<PlayerBlackJack, Double>
+    private lateinit var players: List<PlayerBlackJack>
+    private lateinit var banker: BankerBlackJack
+    private lateinit var hands: HashMap<PlayerBlackJack, HandBlackJack>
+    private lateinit var bids: HashMap<PlayerBlackJack, Double>
 
     interface BlackJackGameDelegate {
         fun onTurn(
@@ -39,7 +39,7 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
         this.deck = Deck()
         this.hands = HashMap()
         this.players = ArrayList()
-        Log.d("BJ", "startRound")
+        logger.d("BJ", "startRound")
         this.bids = bids
         resetStandPlayers()
         this.banker = BankerBlackJack("Rodrigo Rato")
@@ -51,6 +51,8 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
 
         if (hasPlayerAlive()) {
             nextPlayer()
+        }else{
+            cleanBanker()
         }
     }
 
@@ -62,7 +64,7 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
 
 
     fun doPlayerAction(player: PlayerBlackJack, action: PlayerAction) {
-        Log.d("BJ", "doPlayerAction")
+        logger.d("BJ", "doPlayerAction")
 
         when (action) {
             is PlayerAction.Hit -> {
@@ -81,7 +83,7 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
     }
 
     private fun hit(player: PlayerBlackJack) {
-        Log.d("BJ", "hit")
+        logger.d("BJ", "hit")
         hands[player]?.let {
             it.addCard(takeCard())
             delegate.onPlayerUpdated(player, it)
@@ -90,13 +92,13 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
     }
 
     private fun stand(player: PlayerBlackJack) {
-        Log.d("BJ", "stand")
+        logger.d("BJ", "stand")
         player.doStand()
         nextPlayer()
     }
 
     private fun x2Bet(player: PlayerBlackJack) {
-        Log.d("BJ", "x2Bet")
+        logger.d("BJ", "x2Bet")
         bids[player]?.run {
             this * 2
         }
@@ -107,14 +109,14 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
         hands[player]?.let {
             it.addCard(takeCard())
             delegate.onPlayerUpdated(player, it)
-            if (!checkIsBust(player, it)){
+            if (!checkIsBust(player, it)) {
                 stand(player)
             }
         }
     }
 
     private fun split(player: PlayerBlackJack) {
-        Log.d("BJ", "split")
+        logger.d("BJ", "split")
 
     }
 
@@ -127,7 +129,7 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
     }
 
     private fun nextPlayer() {
-        Log.d("BJ", "nextPlayer")
+        logger.d("BJ", "nextPlayer")
 
         getNextPlayerAndHand()?.let {
             delegate.onTurn(it.key, it.value, getPlayerActions(it))
@@ -135,16 +137,15 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
     }
 
     private fun goBanker() {
-        Log.d("BJ", "goBanker")
+        logger.d("BJ", "goBanker")
 
         if (hasPlayerAlive()) {
 
             banker.hand.showCardHidden()
             delegate.onBankerUpdated(banker)
 
-            //TODO If banker hand >= 17 stand banker and check winners
             while (!banker.hand.arriveToBankerLimit() && !banker.hand.isBust()) {
-                Log.d("BJ", "!arriveToBankerLimit && !isBust")
+                logger.d("BJ", "!arriveToBankerLimit && !isBust")
 
                 banker.hand.addCard(takeCard())
                 delegate.onBankerUpdated(banker)
@@ -157,7 +158,7 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
             } else {
                 checkBankerHandVsPlayersAliveHand()
             }
-        }else{
+        } else {
             bankerWinner()
         }
 
@@ -167,7 +168,7 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
     private fun checkBankerHandVsPlayersAliveHand() {
         hands.filter { it.key.stand }.forEach {
 
-            Log.d("BJ", "Comparation: ${banker.hand.compareTo(it.value)}")
+            logger.d("BJ", "Comparation: ${banker.hand.compareTo(it.value)}")
 
             when (banker.hand.compareTo(it.value)) {
                 -1 -> playerWinner(it.key, it.value, BlackJackPrizes.Simple())
@@ -213,7 +214,7 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
             player.lose(bid)
             deck.removeCards(hand.cards)
             hand.cleanHand()
-        delegate.onPlayerLose(player, bid)
+            delegate.onPlayerLose(player, bid)
         }
     }
 
@@ -244,7 +245,7 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
     }
 
     private fun getPlayerActions(playerAndHand: Map.Entry<PlayerBlackJack, HandBlackJack>): List<PlayerAction> {
-        Log.d("BJ", "getPlayerActions")
+        logger.d("BJ", "getPlayerActions")
         val playerActions = mutableListOf<PlayerAction>()
 
         playerActions.add(PlayerAction.Hit())
@@ -259,7 +260,7 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
     }
 
     private fun hasPlayerAlive(): Boolean {
-        Log.d("BJ", "hasPlayerAlive")
+        logger.d("BJ", "hasPlayerAlive")
         var hasPlayerAlive = false
 
         hands.forEach {
@@ -272,7 +273,7 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
     }
 
     private fun getNextPlayerAndHand(): Map.Entry<PlayerBlackJack, HandBlackJack>? {
-        Log.d("BJ", "getNextPlayerAndHand")
+        logger.d("BJ", "getNextPlayerAndHand")
         hands.forEach {
             if (it.value.hasCards() && !it.key.stand) {
                 return it
@@ -282,14 +283,14 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
     }
 
     private fun dealBids() {
-        Log.d("BJ", "dealBids")
+        logger.d("BJ", "dealBids")
         bids.forEach {
             it.key.deal(it.value)
         }
     }
 
     private fun dealCards() {
-        Log.d("BJ", "dealCards")
+        logger.d("BJ", "dealCards")
         players.forEach { hands[it] = HandBlackJack() }
 
         hands.forEach {
@@ -309,7 +310,7 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
     }
 
     private fun checkDirectWinners() {
-        Log.d("BJ", "checkDirectWinners")
+        logger.d("BJ", "checkDirectWinners")
         hands.forEach {
             if (it.value.hasDirectWinner()) {
                 delegate.onPlayerUpdated(it.key, it.value)
@@ -320,7 +321,7 @@ class BlackJackGame(private val delegate: BlackJackGameDelegate) {
     }
 
     private fun takeCard(): Card {
-        Log.d("BJ", "takeCard")
+        logger.d("BJ", "takeCard")
         if (!deck.canTakeCardFromTop()) {
             deck.shuffleDeckOnlyRemovedCards()
         }

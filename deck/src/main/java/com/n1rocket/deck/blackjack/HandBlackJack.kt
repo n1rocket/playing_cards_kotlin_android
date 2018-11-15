@@ -1,7 +1,7 @@
-package com.n1rocket.deck.cards.blackjack
+package com.n1rocket.deck.blackjack
 
-import com.n1rocket.deck.cards.Card
-import com.n1rocket.deck.cards.Hand
+import com.n1rocket.deck.Card
+import com.n1rocket.deck.Hand
 
 class HandBlackJack(var isHiddenCard: Boolean = false) : Hand() {
 

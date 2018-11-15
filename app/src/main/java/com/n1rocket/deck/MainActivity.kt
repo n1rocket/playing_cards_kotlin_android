@@ -4,10 +4,10 @@ import android.os.Bundle
 import android.support.design.widget.Snackbar
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
-import com.n1rocket.deck.cards.blackjack.BankerBlackJack
-import com.n1rocket.deck.cards.blackjack.BlackJackGame
-import com.n1rocket.deck.cards.blackjack.HandBlackJack
-import com.n1rocket.deck.cards.blackjack.PlayerBlackJack
+import com.n1rocket.deck.blackjack.BankerBlackJack
+import com.n1rocket.deck.blackjack.BlackJackGame
+import com.n1rocket.deck.blackjack.HandBlackJack
+import com.n1rocket.deck.blackjack.PlayerBlackJack
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
 
@@ -87,6 +87,10 @@ class MainActivity : AppCompatActivity() {
                 Log.d("BlackJack", "onPlayerWinner: ${player.name}, $prize€")
                 hideActions()
                 showMessage("${player.name} Win!")
+            }
+        }, object : LoggerInterface {
+            override fun d(LOGTAG: String, message: String) {
+                Log.d(LOGTAG, message)
             }
         })
 

@@ -1,6 +1,6 @@
-package com.n1rocket.deck.cards.blackjack
+package com.n1rocket.deck.blackjack
 
-import com.n1rocket.deck.cards.Player
+import com.n1rocket.deck.Player
 
 class PlayerBlackJack(name: String, money: Double, var stand: Boolean = false) : Player(name, money) {
     fun doStand(stand: Boolean = true) {

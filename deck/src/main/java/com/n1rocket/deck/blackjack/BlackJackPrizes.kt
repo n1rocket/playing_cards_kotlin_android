@@ -1,4 +1,4 @@
-package com.n1rocket.deck.cards.blackjack
+package com.n1rocket.deck.blackjack
 
 sealed class BlackJackPrizes {
     class BlackJack : BlackJackPrizes()
