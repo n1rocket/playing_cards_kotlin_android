@@ -1,6 +1,6 @@
-package com.n1rocket.deck.cards.blackjack
+package com.n1rocket.deck.blackjack
 
-import com.n1rocket.deck.cards.Card
+import com.n1rocket.deck.Card
 import org.junit.Assert
 import org.junit.Test
 
